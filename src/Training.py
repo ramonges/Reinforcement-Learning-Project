@@ -1,17 +1,40 @@
-
+import torch
+import wandb
+from tqdm import tqdm
 
 
 def train_agent(env, agent, episodes=1000):
-    for episode in range(episodes):
-        state = env.reset()
-        done = False
-        while not done:
-            action = agent.predict_action(state)  # Predict the action for the current state
-            next_state, reward, done, _ = env.step(action)  # Take the action in the environment
-            agent.update_policy(state, action, reward, next_state, done)  # Update the policy
-            state = next_state
-        print(f"Episode {episode + 1}: Complete")
-    print("Training complete")
+    with torch.autograd.set_detect_anomaly(True):
+        for episode in tqdm(range(episodes)):
+            state = env.reset()
+            done = False
+            states, actions, rewards, next_states, dones, old_log_probs = [], [], [], [], [], []
+            while not done:
+                action, log_prob = agent.predict_action(state, return_log_prob=True)  # Updated call
+
+
+                next_state, reward, done, _ = env.step(action)
+                
+                # Store experiences
+                states.append(state)
+                actions.append(action)
+                rewards.append(reward)
+                next_states.append(next_state)
+                dones.append(done)
+                old_log_probs.append(log_prob)
+                
+                state = next_state
+
+            # After collecting experience, update the policy
+            agent.update_policy(states, actions, rewards, next_states, dones, old_log_probs)
+
+            # print total rewards for the episode
+            total_rewards = sum(sum(rewards)[0])
+            wandb.log({"total_rewards": total_rewards})
+
+            # print(f"Episode {episode + 1}: Total Rewards: {total_rewards}")
+
+        print("Training complete")
 
 
 
