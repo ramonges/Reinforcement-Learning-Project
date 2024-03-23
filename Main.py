@@ -52,24 +52,24 @@ def main():
 
 
     # Setup wandb for logging
-    wandb.init(project="RL Trading", config={
-        "episodes": 1000,
-        "learning_rate_actor": 1e-4,
-        "learning_rate_critic": 1e-3
+    wandb.init(project="RL Trading",config={
+        "episodes"             : 1000,
+        "learning_rate_actor"  : 1e-4,
+        "learning_rate_critic" : 1e-3
     })
     config = wandb.config
 
 
     # Initialise the agent
-    agent = PPOAgent(state_size=env.state_space,
-                     action_size=env.action_space,
-                     action_bound=1,
-                     lr_actor=config.learning_rate_actor,
-                     lr_critic=config.learning_rate_critic,
-                     action_std=0.5,
-                     update_epochs=10,
-                     clip_param=0.2,
-                     entropy_beta=0.01)
+    agent = PPOAgent(state_size    = env.state_space,
+                     action_size   = env.action_space,
+                     action_bound  = 1,
+                     lr_actor      = config.learning_rate_actor,
+                     lr_critic     = config.learning_rate_critic,
+                     action_std    = 0.5,
+                     update_epochs = 10,
+                     clip_param    = 0.2,
+                     entropy_beta  = 0.01)
 
 
     # Train the agent
