@@ -54,12 +54,12 @@ def main():
 
     agent = PPOAgent(state_size=env.state_space, action_size=env.action_space, action_bound=1)
 
+    # (actor and critic models are already defined in the PP0Agent class)
     actor_model = Actor(state_size=100, action_size=1, action_bound=1)
     critic_model = Critic(state_size=100, action_size=1)
 
-    summary(actor_model, input_size=(1, 100))
-    summary(critic_model, input_size=(1, 101)) 
-    print(critic_model.summary())
+    print(actor_model)
+    print(critic_model)
 
 
     # Train the agent
