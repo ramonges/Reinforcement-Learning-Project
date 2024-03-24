@@ -54,29 +54,29 @@ def main():
     # Setup wandb for logging
     wandb.init(project="RL Trading",config={
         "episodes"             : 1000,
-        "learning_rate_actor"  : 1e-4,
-        "learning_rate_critic" : 1e-3
+        "learning_rate_actor"  : 1e-3,
+        "learning_rate_critic" : 5e-4
     })
     config = wandb.config
 
 
     # Initialise the agent
-    agent = PPOAgent(state_size    = env.state_space,
-                     action_size   = env.action_space,
-                     action_bound  = 1,
-                     lr_actor      = config.learning_rate_actor,
-                     lr_critic     = config.learning_rate_critic,
-                     action_std    = 0.5,
-                     update_epochs = 10,
-                     clip_param    = 0.2,
-                     entropy_beta  = 0.01)
+    agent = PPOAgent(state_size    = env.state_space,             # The number of features
+                     action_size   = env.action_space,            # The number of possible actions
+                     action_bound  = 1,                           # The bound for the action values
+                     lr_actor      = config.learning_rate_actor,  # The learning rate for the actor network
+                     lr_critic     = config.learning_rate_critic, # The learning rate for the critic network
+                     action_std    = 0.5,                         # The standard deviation for the action distribution
+                     update_epochs = 10,                          # The number of epochs for updating the network
+                     clip_param    = 0.3,                         # The clip parameter for the PPO algorithm
+                     entropy_beta  = 0.05)                        # The entropy beta for the loss function
 
 
     # Train the agent
     train_agent(env, agent , episodes=config.episodes)
 
     # Run the simulation
-    run_simulation(env, agent)
+    run_simulation(env, agent) # not working
 
 
 

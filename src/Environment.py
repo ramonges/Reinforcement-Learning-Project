@@ -3,6 +3,9 @@ import numpy as np
 
 class TradingEnvironment:
     def __init__(self, data, initial_balance=10000, transaction_cost=0.001):
+        """
+        Initialize the trading environment
+        """
         self.data = data
         self.state_space = data.shape[1]  # This should match the number of features used to represent a state
         self.action_space = 3  # For example: buy, sell,
@@ -10,7 +13,12 @@ class TradingEnvironment:
         self.transaction_cost = transaction_cost
         self.reset()
 
+
+
     def reset(self):
+        """
+        Reset the trading environment
+        """
         self.current_step = 0
         self.balance = self.initial_balance
         self.portfolio_value = self.initial_balance
@@ -19,10 +27,20 @@ class TradingEnvironment:
         self.history = []  # To store trade history
         return self._next_observation()
 
+
+
     def _next_observation(self):
+        """
+        Get the next observation
+        """
         return self.data.iloc[self.current_step]
 
-    def step(self, action):        
+
+
+    def step(self, action):  
+        """
+        Take a step in the trading environment: buy, sell, or hold
+        """      
         # Ensure action is within a valid range
         action = np.clip(action, -1, 1)
 
@@ -54,11 +72,18 @@ class TradingEnvironment:
 
         return self._next_observation(), reward, self.done, {}
 
+
+
     def render(self):
+        """
+        Print the current state
+        """
         print("Step:", self.current_step)
         print("Balance:", self.balance)
         print("Position:", self.position)
         print("Portfolio Value:", self.portfolio_value)
+
+
 
     def run_backtest(self, policy):
         """

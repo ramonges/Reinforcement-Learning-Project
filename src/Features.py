@@ -2,9 +2,12 @@ import ta
 import pandas as pd
 
 
+
 class FeatureEngineer:
     def __init__(self, data):
         self.data = data
+
+
 
     def calculate_technical_indicators(self):
         """
@@ -15,6 +18,8 @@ class FeatureEngineer:
         self.data['ema20'] = ta.trend.ema_indicator(self.data['Dernier'], window=20)
         self.data['ema50'] = ta.trend.ema_indicator(self.data['Dernier'], window=50)
 
+
+
     def normalize_features(self):
         """
         Normalize features to have a similar scale.
@@ -24,12 +29,16 @@ class FeatureEngineer:
         features = ['rsi', 'macd', 'ema20', 'ema50']  # Specify the features to normalize
         self.data[features] = scaler.fit_transform(self.data[features])
 
+
+
     def integrate_economic_indicators(self, economic_data):
         """
         Integrate economic indicators with market data.
         This function assumes economic_data is a DataFrame where columns are indicators and rows align with self.data's timeline.
         """
         self.data = pd.concat([self.data, economic_data], axis=1)
+
+
 
     def construct_feature_vector(self):
         """
@@ -38,3 +47,5 @@ class FeatureEngineer:
         this function will return a numpy array representation of the DataFrame.
         """
         return self.data.values
+    
+

@@ -1,10 +1,17 @@
 import torch
 import wandb
 from tqdm import tqdm
+import numpy as np
+
 
 
 def train_agent(env, agent, episodes=1000):
+    """
+    Train the agent using the PPO algorithm
+    """
     with torch.autograd.set_detect_anomaly(True):
+        log_rewards = [] # for average rewards
+
         for episode in tqdm(range(episodes)):
             state = env.reset()
             done = False
@@ -32,13 +39,20 @@ def train_agent(env, agent, episodes=1000):
             total_rewards = sum(sum(rewards)[0])
             wandb.log({"total_rewards": total_rewards})
 
+            log_rewards.append(total_rewards)
+
             # print(f"Episode {episode + 1}: Total Rewards: {total_rewards}")
 
         print("Training complete")
+        avg_reward = np.mean(log_rewards)
+        wandb.log({"avg_reward": avg_reward})
 
 
 
 def run_simulation(env, agent):
+    """
+    Run a simulation of the trading environment using the trained agent
+    """
     state = env.reset()
     done = False
     total_pnl = 0
