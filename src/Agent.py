@@ -80,7 +80,7 @@ class PPOAgent:
         
         # Convert everything into PyTorch tensors
         states = torch.FloatTensor(states)
-        actions = torch.FloatTensor(actions)
+        actions = torch.FloatTensor(np.array(actions))
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
         dones = torch.FloatTensor(dones)
