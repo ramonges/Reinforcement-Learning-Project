@@ -18,29 +18,31 @@ def main():
     fe_gaz = FeatureEngineer(gaz)
     fe_gaz.apply_preprocessing()
     gaz = fe_gaz.df
+    print(f"Data Preprocessing Complete: gaz.shape={gaz.shape}")
 
 
     # Initialize the environment
     env = TradingEnvironment(gaz)
-    backtest_history = env.run_backtest(sample_policy)
+    # backtest_history = env.run_backtest(sample_policy)
 
-
+    config = {"episodes"             : 1000,
+              "learning_rate_actor"  : 1e-3,
+              "learning_rate_critic" : 5e-4}
 
     # Setup wandb for logging
-    wandb.init(project="RL Trading",config={
-        "episodes"             : 1000,
-        "learning_rate_actor"  : 1e-3,
-        "learning_rate_critic" : 5e-4
-    })
-    config = wandb.config
+    wandb_is_on = False
+    if wandb_is_on:
+        wandb.login()
+        wandb.init(project="RL Trading",config=config)
+        
 
 
     # Initialise the agent
     agent = PPOAgent(state_size    = env.state_space,             # The number of features
                      action_size   = env.action_space,            # The number of possible actions
                      action_bound  = 1,                           # The bound for the action values
-                     lr_actor      = config.learning_rate_actor,  # The learning rate for the actor network
-                     lr_critic     = config.learning_rate_critic, # The learning rate for the critic network
+                     lr_actor      = config['learning_rate_actor'],  # The learning rate for the actor network
+                     lr_critic     = config['learning_rate_critic'], # The learning rate for the critic network
                      action_std    = 0.5,                         # The standard deviation for the action distribution
                      update_epochs = 10,                          # The number of epochs for updating the network
                      clip_param    = 0.3,                         # The clip parameter for the PPO algorithm
@@ -48,7 +50,7 @@ def main():
 
 
     # Train the agent
-    train_agent(env, agent , episodes=config.episodes)
+    train_agent(env, agent , episodes=config['episodes'] , wandb_is_on=wandb_is_on)
 
     # Run the simulation
     run_simulation(env, agent) # not working

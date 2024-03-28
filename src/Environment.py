@@ -7,7 +7,7 @@ class TradingEnvironment:
         Initialize the trading environment
         """
         self.data = data
-        self.state_space = data.shape[1]  # This should match the number of features used to represent a state
+        self.state_space = data.shape[1] # the number of features in the data, could be beneficial to include a window of previous prices
         self.action_space = 3  # For example: buy, sell,
         self.initial_balance = initial_balance
         self.transaction_cost = transaction_cost
@@ -37,40 +37,38 @@ class TradingEnvironment:
 
 
 
-    def step(self, action):  
-        """
-        Take a step in the trading environment: buy, sell, or hold
-        """      
-        # Ensure action is within a valid range
-        action = np.clip(action, -1, 1)
-
-        # Calculate the number of shares bought/sold based on the action
-        delta_position = action * self.balance  # This assumes all-in on each action
-
-        # Get the current price from the dataset to calculate changes in portfolio value
-        current_price = self.data.iloc[self.current_step]['Dernier']  # Assuming 'close' is a column in your dataset
-        next_step = min(self.current_step + 1, len(self.data) - 1)  # Ensure we don't go past the end of the dataset
+    def step(self, action):
+        current_price = self.data.iloc[self.current_step]['Dernier']
+        next_step = min(self.current_step + 1, len(self.data) - 1)
         next_price = self.data.iloc[next_step]['Dernier']
 
-        # Update position and balance
-        change_in_value = delta_position * (next_price - current_price) / current_price
-        self.balance += change_in_value - (abs(delta_position) * self.transaction_cost)
-        self.portfolio_value = self.balance  # This could be more complex if managing multiple positions
-        self.position += delta_position
+        # Interpret action
+        if action == 1:  # Buy
+            delta_position = self.balance * 0.1 / current_price  # Buy with 10% of balance
+        elif action == 2:  # Sell
+            delta_position = -self.position  # Sell all
+        else:  # Hold or invalid action
+            delta_position = 0
+
+        # Update balance and position based on action
+        if delta_position > 0:  # Buying
+            cost = delta_position * current_price
+            self.balance -= cost + (cost * self.transaction_cost)
+            self.position += delta_position
+        elif delta_position < 0:  # Selling
+            revenue = abs(delta_position) * current_price
+            self.balance += revenue - (revenue * self.transaction_cost)
+            self.position += delta_position  # delta_position is negative
+
+        # Update portfolio value and reward calculation
+        self.portfolio_value = self.balance + (self.position * next_price)
+        reward = self.portfolio_value - self.initial_balance - (abs(delta_position) * current_price * self.transaction_cost)
 
         self.current_step = next_step
-
-        # Check if we're at the end
-        if self.current_step >= len(self.data) - 1:
-            self.done = True
-
-        # Here, the reward could be the change in portfolio value, or some other metric
-        reward = change_in_value - (abs(delta_position) * self.transaction_cost)
-        
-        # Record this step
-        self.history.append((self.current_step, self.position, self.portfolio_value, reward))
+        self.done = self.current_step >= len(self.data) - 1
 
         return self._next_observation(), reward, self.done, {}
+
 
 
 

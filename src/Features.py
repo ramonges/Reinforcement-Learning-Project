@@ -11,6 +11,7 @@ class FeatureEngineer:
         self.df = df.copy()
 
 
+
     def apply_preprocessing(self):
         """
         Apply preprocessing steps to the dataset.
@@ -30,11 +31,13 @@ class FeatureEngineer:
             self.df[i] = self.df[i].str.replace(',', '.')
 
     
+
     def sort_by_date(self):
-        self.df['Date']=pd.to_datetime(self.df['Date'])
+        self.df['Date']=pd.to_datetime(self.df['Date'], format='%d/%m/%Y')
         self.df = self.df.sort_values(by='Date')
         self.df.reset_index(drop=True)
         self.df['Date'] = pd.to_numeric(self.df['Date'])
+
 
 
     def calculate_technical_indicators(self):
@@ -45,11 +48,13 @@ class FeatureEngineer:
         self.df['ema50'] = ta.trend.ema_indicator(self.df['Dernier'], window=50)
 
 
+
     def normalise_technical_indicators(self):
         from sklearn.preprocessing import MinMaxScaler
         scaler = MinMaxScaler()
         features = ['rsi', 'macd', 'ema20', 'ema50']
         self.df[features] = scaler.fit_transform(self.df[features])
+
 
 
     def convert_k_m_to_numeric(self , value):
@@ -71,9 +76,11 @@ class FeatureEngineer:
         return float(value)
     
 
+
     def convert_to_numeric(self):
         for column in ['Ouv.' , ' Plus Haut' , 'Plus Bas' , 'Vol.' , 'Variation %']:
             self.df[column] = self.df[column].apply(self.convert_k_m_to_numeric)
+
 
 
     def fill_and_drop(self):

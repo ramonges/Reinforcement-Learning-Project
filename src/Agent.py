@@ -21,10 +21,6 @@ class PPOAgent:
         self.clip_param = clip_param
         self.entropy_beta = entropy_beta
 
-        # # Define the environment and PPO agent parameters
-        # state_size = 100  # Assume 100 features for the state
-        # action_size = 1  # Buy/sell quantity as a single action
-        # action_bound = 1  # Action limit (e.g., normalized quantity between -1 and 1)
 
 
 

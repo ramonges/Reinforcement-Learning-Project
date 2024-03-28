@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-def train_agent(env, agent, episodes=1000):
+def train_agent(env, agent, episodes=1000 , wandb_is_on=False):
     """
     Train the agent using the PPO algorithm
     """
@@ -22,6 +22,8 @@ def train_agent(env, agent, episodes=1000):
 
                 next_state, reward, done, _ = env.step(action)
                 
+                print(f"ep {episode} : \nstate : {state} \naction : {action} \nreward : {reward} \nnext_state : {next_state} \ndone : {done} \nlog_prob : {log_prob} \n")
+
                 # Store experiences
                 states.append(state)
                 actions.append(action)
@@ -35,9 +37,11 @@ def train_agent(env, agent, episodes=1000):
             # After collecting experience, update the policy
             agent.update_policy(states, actions, rewards, next_states, dones, old_log_probs)
 
-            # print total rewards for the episode
+            # Log the total rewards
             total_rewards = sum(sum(rewards)[0])
-            wandb.log({"total_rewards": total_rewards})
+
+            if wandb_is_on:
+                wandb.log({"total_rewards": total_rewards})
 
             log_rewards.append(total_rewards)
 
@@ -45,7 +49,9 @@ def train_agent(env, agent, episodes=1000):
 
         print("Training complete")
         avg_reward = np.mean(log_rewards)
-        wandb.log({"avg_reward": avg_reward})
+
+        if wandb_is_on:
+            wandb.log({"avg_reward": avg_reward})
 
 
 
