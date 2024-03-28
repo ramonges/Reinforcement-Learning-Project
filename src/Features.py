@@ -4,48 +4,79 @@ import pandas as pd
 
 
 class FeatureEngineer:
-    def __init__(self, data):
-        self.data = data
+    def __init__(self , df):
+        """
+        Initialize the FeatureEngineer object with a DataFrame.
+        """
+        self.df = df.copy()
 
+
+    def apply_preprocessing(self):
+        """
+        Apply preprocessing steps to the dataset.
+        """
+        self.replace_commas()
+        self.sort_by_date()
+        self.calculate_technical_indicators() # Calculate RSI, MACD, EMA20, EMA50
+        self.normalise_technical_indicators()
+        self.convert_to_numeric() # Convert 'K' and 'M' suffixes to numeric values
+        self.fill_and_drop() # Fill NaN values and drop rows with NaN values
+
+
+
+    def replace_commas(self):
+        lists = ['Dernier', 'Ouv.', ' Plus Haut', 'Plus Bas', 'Vol.','Variation %']
+        for i in lists: 
+            self.df[i] = self.df[i].str.replace(',', '.')
+
+    
+    def sort_by_date(self):
+        self.df['Date']=pd.to_datetime(self.df['Date'])
+        self.df = self.df.sort_values(by='Date')
+        self.df.reset_index(drop=True)
+        self.df['Date'] = pd.to_numeric(self.df['Date'])
 
 
     def calculate_technical_indicators(self):
-        """
-        Calculate specified technical indicators for the dataset.
-        """
-        self.data['rsi'] = ta.momentum.rsi(self.data['Dernier'], window=14)
-        self.data['macd'] = ta.trend.macd_diff(self.data['Dernier'])
-        self.data['ema20'] = ta.trend.ema_indicator(self.data['Dernier'], window=20)
-        self.data['ema50'] = ta.trend.ema_indicator(self.data['Dernier'], window=50)
+        self.df['Dernier'] = pd.to_numeric(self.df['Dernier'], errors='coerce')
+        self.df['rsi'] = ta.momentum.rsi(self.df['Dernier'], window=14)
+        self.df['macd'] = ta.trend.macd_diff(self.df['Dernier'])
+        self.df['ema20'] = ta.trend.ema_indicator(self.df['Dernier'], window=20)
+        self.df['ema50'] = ta.trend.ema_indicator(self.df['Dernier'], window=50)
 
 
-
-    def normalize_features(self):
-        """
-        Normalize features to have a similar scale.
-        """
+    def normalise_technical_indicators(self):
         from sklearn.preprocessing import MinMaxScaler
         scaler = MinMaxScaler()
-        features = ['rsi', 'macd', 'ema20', 'ema50']  # Specify the features to normalize
-        self.data[features] = scaler.fit_transform(self.data[features])
+        features = ['rsi', 'macd', 'ema20', 'ema50']
+        self.df[features] = scaler.fit_transform(self.df[features])
 
 
-
-    def integrate_economic_indicators(self, economic_data):
+    def convert_k_m_to_numeric(self , value):
         """
-        Integrate economic indicators with market data.
-        This function assumes economic_data is a DataFrame where columns are indicators and rows align with self.data's timeline.
+        Convert values with 'K' or 'M' suffix to float numbers.
+        Args:
+        - value: The string or numeric value to convert.
+        
+        Returns:
+        - The converted value as float if 'K' or 'M' was found; otherwise, the original value.
         """
-        self.data = pd.concat([self.data, economic_data], axis=1)
-
-
-
-    def construct_feature_vector(self):
-        """
-        Combine all features into a single vector for each timestep.
-        Assuming all necessary features are already columns in self.data,
-        this function will return a numpy array representation of the DataFrame.
-        """
-        return self.data.values
+        if isinstance(value, str):  # Only process strings
+            if value.endswith('K'):
+                return float(value[:-1]) * 1e3
+            elif value.endswith('M'):
+                return float(value[:-1]) * 1e6
+            elif value.endswith('%'):
+                return float(value[:-1]) / 100
+        return float(value)
     
+
+    def convert_to_numeric(self):
+        for column in ['Ouv.' , ' Plus Haut' , 'Plus Bas' , 'Vol.' , 'Variation %']:
+            self.df[column] = self.df[column].apply(self.convert_k_m_to_numeric)
+
+
+    def fill_and_drop(self):
+        self.df['Vol.'] = self.df['Vol.'].fillna(self.df['Vol.'].median())
+        self.df = self.df.dropna()
 

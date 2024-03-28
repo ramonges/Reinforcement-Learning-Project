@@ -13,40 +13,15 @@ import wandb
 
 
 def main():
-    # Load the data
+    # Load and preprocess the data
     gaz = pd.read_csv('Data/Dutch TTF Natural Gas Futures - Données Historiques (1).csv')
-    gaz['Date']=pd.to_datetime(gaz['Date'])
-    lists = ['Dernier', 'Ouv.', ' Plus Haut', 'Plus Bas', 'Vol.','Variation %']
-    for i in lists: 
-        gaz[i] = gaz[i].str.replace(',', '.')
-
-
-    # Process the data
-    gaz['Dernier'] = pd.to_numeric(gaz['Dernier'], errors='coerce')
-    gaz['rsi'] = ta.momentum.rsi(gaz['Dernier'], window=14)
-    gaz['macd'] = ta.trend.macd_diff(gaz['Dernier'])
-    gaz['ema20'] = ta.trend.ema_indicator(gaz['Dernier'], window=20)
-    gaz['ema50'] = ta.trend.ema_indicator(gaz['Dernier'], window=50)
-    gaz['Vol.'] = gaz['Vol.'].apply(convert_k_m_to_numeric)
-    for column in gaz.columns:
-        gaz[column] = pd.to_numeric(gaz[column], errors='coerce')
-    assert gaz.applymap(np.isreal).all().all(), "Non-numeric data found in the dataset."
-
-
-    # Feature Engineering
-    feature_engineer = FeatureEngineer(gaz)
-    feature_engineer.calculate_technical_indicators()  # Calculate RSI, MACD, EMA20, EMA50
-    feature_engineer.normalize_features()  # Normalize the features
-    features_vector = feature_engineer.construct_feature_vector()  # Get the feature vector
-
-
-    # Fill NaN in gaz (not using feature engineering yet)
-    gaz_copy = gaz.copy()
-    gaz_copy.fillna(0, inplace=True)
+    fe_gaz = FeatureEngineer(gaz)
+    fe_gaz.apply_preprocessing()
+    gaz = fe_gaz.df
 
 
     # Initialize the environment
-    env = TradingEnvironment(gaz_copy)
+    env = TradingEnvironment(gaz)
     backtest_history = env.run_backtest(sample_policy)
 
 
