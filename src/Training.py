@@ -23,6 +23,7 @@ def train_agent(env, agent, episodes=1000 , wandb_is_on=False):
                 next_state, reward, done, _ = env.step(action)
                 
                 print(f"ep {episode} : \nstate : {state} \naction : {action} \nreward : {reward} \nnext_state : {next_state} \ndone : {done} \nlog_prob : {log_prob} \n")
+                print(sum(rewards[0]))
 
                 # Store experiences
                 states.append(state)
