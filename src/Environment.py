@@ -48,6 +48,16 @@ class TradingEnvironment(gym.Env):
 
         return self.state
 
+    def reward_function(
+        self, balance, new_balance, price, new_price, position, new_position, action
+    ):
+        """
+        Calculate the reward based on the change in balance, position, and trading action.
+        """
+        # reward = new_balance + new_position * new_price
+        reward = new_balance + new_price * new_position - balance - price * position
+        return reward
+
     def step(self, action):
         """
         Take a step in the trading environment: buy, sell, or hold
@@ -62,6 +72,10 @@ class TradingEnvironment(gym.Env):
             for key, value in self.action_dic.items():
                 if value == 0:
                     action = key
+        if self.action_dic[action] == 1 and balance < price:
+            for key, value in self.action_dic.items():
+                if value == 0:
+                    action = key
 
         # New state
         new_balance = balance - price * self.action_dic[action]
@@ -70,7 +84,9 @@ class TradingEnvironment(gym.Env):
         self.state = (new_balance, new_price, new_position)
 
         # Reward
-        self.reward = new_balance + new_price * new_position
+        self.reward = self.reward_function(
+            balance, new_balance, price, new_price, position, new_position, action
+        )
 
         # Done
         if self.index_step == self.max_steps:
