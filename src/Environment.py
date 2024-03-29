@@ -1,89 +1,106 @@
 import numpy as np
+import random
+
+import gymnasium as gym
+from gymnasium import spaces
 
 
-class TradingEnvironment:
-    def __init__(self, data, initial_balance=10000, transaction_cost=0.001):
+class TradingEnvironment(gym.Env):
+    def __init__(self, data, init_balance=10000, init_pos=0, max_steps=360):
         """
         Initialize the trading environment
         """
+        super(TradingEnvironment, self).__init__()
+
         self.data = data
-        self.state_space = data.shape[1]  # This should match the number of features used to represent a state
-        self.action_space = 3  # For example: buy, sell,
-        self.initial_balance = initial_balance
-        self.transaction_cost = transaction_cost
+        self.init_balance = init_balance
+        self.init_pos = init_pos
+        self.max_steps = max_steps
+
+        self.current_step = None
+        self.state = None
+
+        self.action_space = spaces.Discrete(3)
+        self.action_dic = {0: -1, 1: 0, 2: 1}  # sell  # hold  # buy
+
+        self.observation_space = spaces.Box(
+            low=np.array([0, 0, 0]),
+            high=np.array([np.inf, np.inf, np.inf]),
+            dtype=np.float32,
+        )
+
         self.reset()
-
-
 
     def reset(self):
         """
         Reset the trading environment
         """
-        self.current_step = 0
-        self.balance = self.initial_balance
-        self.portfolio_value = self.initial_balance
+        self.index_step = 0
+
+        self.index_loc = random.randint(0, len(self.data) - self.max_steps - 1)
+        self.state = (
+            self.init_balance,  # balance
+            self.data.iloc[self.index_loc],  # price
+            self.init_pos,  # position
+        )
+
         self.done = False
-        self.position = 0
-        self.history = []  # To store trade history
-        return self._next_observation()
 
+        return self.state
 
-
-    def _next_observation(self):
-        """
-        Get the next observation
-        """
-        return self.data.iloc[self.current_step]
-
-
-
-    def step(self, action):  
+    def step(self, action):
         """
         Take a step in the trading environment: buy, sell, or hold
-        """      
-        # Ensure action is within a valid range
-        action = np.clip(action, -1, 1)
+        state -> action -> reward / new state
+        """
+        self.index_step += 1
 
-        # Calculate the number of shares bought/sold based on the action
-        delta_position = action * self.balance  # This assumes all-in on each action
+        # State
+        balance, price, position = self.state
 
-        # Get the current price from the dataset to calculate changes in portfolio value
-        current_price = self.data.iloc[self.current_step]['Dernier']  # Assuming 'close' is a column in your dataset
-        next_step = min(self.current_step + 1, len(self.data) - 1)  # Ensure we don't go past the end of the dataset
-        next_price = self.data.iloc[next_step]['Dernier']
+        if self.action_dic[action] == -1 and position == 0:
+            for key, value in self.action_dic.items():
+                if value == 0:
+                    action = key
 
-        # Update position and balance
-        change_in_value = delta_position * (next_price - current_price) / current_price
-        self.balance += change_in_value - (abs(delta_position) * self.transaction_cost)
-        self.portfolio_value = self.balance  # This could be more complex if managing multiple positions
-        self.position += delta_position
+        # New state
+        new_balance = balance - price * self.action_dic[action]
+        new_price = self.data.iloc[self.index_loc + self.index_step]
+        new_position = position + self.action_dic[action]
+        self.state = (new_balance, new_price, new_position)
 
-        self.current_step = next_step
+        # Reward
+        self.reward = new_balance + new_price * new_position
 
-        # Check if we're at the end
-        if self.current_step >= len(self.data) - 1:
+        # Done
+        if self.index_step == self.max_steps:
             self.done = True
 
-        # Here, the reward could be the change in portfolio value, or some other metric
-        reward = change_in_value - (abs(delta_position) * self.transaction_cost)
-        
-        # Record this step
-        self.history.append((self.current_step, self.position, self.portfolio_value, reward))
+        # Info
+        self.info = {
+            "balance": balance,
+            "price": price,
+            "position": position,
+            "action": self.action_dic[action],
+            "new_balance": new_balance,
+            "new_price": new_price,
+            "new_position": new_position,
+            "reward": self.reward,
+            "done": self.done,
+        }
 
-        return self._next_observation(), reward, self.done, {}
-
-
+        return self.state, self.reward, self.done, self.info
 
     def render(self):
         """
         Print the current state
         """
-        print("Step:", self.current_step)
-        print("Balance:", self.balance)
-        print("Position:", self.position)
-        print("Portfolio Value:", self.portfolio_value)
-
-
+        balance, price, position = self.state
+        print("Step:", self.index_step)
+        print("Balance:", balance)
+        print(f"Price: {price}")
+        print("Position:", position)
+        print(f"Reward: {balance + position * price}")
 
     def run_backtest(self, policy):
         """
@@ -91,14 +108,13 @@ class TradingEnvironment:
         The policy function should take a state as input and return an action.
         """
         self.reset()
+        history = []
         while not self.done:
-            current_state = self._next_observation()
-            action = policy(current_state)
+            action = policy(self.state)
             self.step(action)
-        return self.history
-    
+            history.append(self.info)
+        return history
 
 
-def sample_policy(state):
-    # This is a dummy policy that randomly decides to buy, hold, or sell
-    return np.random.uniform(-1, 1)
+def random_policy(state):
+    return random.choice([0, 1, 2])
