@@ -7,7 +7,9 @@ Therefore, our objective is to design and implement an automated trading system 
 
 The architcture will be around three modules: 1. Environment 2. Feature engineering 3. PPO Agent 
 
-The trading environment simulates the gas market, incorporating elements like price vectors (Open, High, Low, Close), technical indicators (MACD, RSI, EMAs, Volume, Imbalance..), and economic data (CPI, Rates, storage..) to create a realistic and dynamic setting for the agent to interact with. 
+The trading environment simulates the gas market, incorporating elements like price vectors (Open, High, Low, Close), technical indicators (MACD, RSI)  to create a realistic and dynamic setting for the agent to interact with. 
+
+As a baseline we will have an epsilon greedy algorithm. 
 
 The PPO agent, designed with a focus on adaptability and learning efficiency, employs neural networks to approximate both policy and value functions, enabling it to make informed trading decisions based on the state of the market.
 
